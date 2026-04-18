@@ -21,6 +21,7 @@ export interface CLIOptions {
   featureName?: string;
   outputDir?: string;
   designFile?: string;
+  designUrl?: string;
   skipValidation: boolean;
   skipTests: boolean;
   skipSkills: boolean;
@@ -77,6 +78,17 @@ export interface PipelineOutput {
   hooks: GeneratedHook[];
   tests: GeneratedTest[];
   indexFile: string;
+  externalDependencies: ExternalDependency[];
+}
+
+/** A third-party import detected in generated output */
+export interface ExternalDependency {
+  /** npm package name, e.g. "lucide-react" or "@/components/ui/button" */
+  package: string;
+  /** Named symbols imported from the package */
+  symbols: string[];
+  /** Which generated file contains the import */
+  sourceFile: string;
 }
 
 /** A repository skill/pattern */

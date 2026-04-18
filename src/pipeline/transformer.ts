@@ -32,6 +32,44 @@ function toKebabCase(name: string): string {
 }
 
 /**
+ * Parses a multi-file v0 code string (lines starting with `// /path`)
+ * into individual { path, content } sections.
+ * Falls back to a single section with the full code when no headers found.
+ */
+function parseFileSections(code: string): Array<{ path: string; content: string }> {
+  const headerRe = /^\/\/ (\/[^\n]+)/gm;
+  const indices: Array<{ path: string; index: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = headerRe.exec(code)) !== null) {
+    indices.push({ path: m[1], index: m.index });
+  }
+  if (indices.length === 0) return [{ path: "design.tsx", content: code }];
+
+  return indices.map((entry, i) => {
+    const start = code.indexOf("\n", entry.index) + 1;
+    const end = i + 1 < indices.length ? indices[i + 1].index : code.length;
+    return { path: entry.path, content: code.slice(start, end).trim() };
+  });
+}
+
+/**
+ * From a (possibly multi-file) v0 code string, extract the content of the
+ * single most-relevant component file.
+ * Priority: page.tsx > first .tsx > first file.
+ */
+function extractPrimaryCode(code: string): string {
+  const sections = parseFileSections(code);
+  if (sections.length === 1) return code;
+
+  const primary =
+    sections.find((s) => s.path.endsWith("page.tsx")) ??
+    sections.find((s) => s.path.endsWith(".tsx")) ??
+    sections[0];
+
+  return primary.content;
+}
+
+/**
  * Transforms a raw v0 design into a set of typed, production-ready
  * React/Next.js components following the project conventions.
  */
@@ -46,7 +84,7 @@ export class ComponentTransformer {
     const isClient = needsClientDirective(design.code);
 
     const primary = this.buildPrimaryComponent(design, componentName, isClient, ctx);
-    const wrapper = this.buildWrapperComponent(componentName, ctx);
+    const wrapper = this.buildWrapperComponent(componentName, ctx, hasNamedExport);
 
     return [primary, wrapper];
   }
@@ -115,12 +153,27 @@ export function ${hookName}(): ${componentName}State {
     const clientDirective = isClient ? '"use client";\n\n' : "";
     const kebabName = toKebabCase(componentName);
 
-    const errorBoundaryImport =
-      ctx.flags.enableErrorBoundaries && !isClient
-        ? `import { Suspense } from "react";\n`
-        : "";
+    const primaryCode = extractPrimaryCode(design.code);
+    const isCompleteModule = /export\s+(default\s+)?(function|const|class|async)/.test(primaryCode);
+    // Does the code expose a named export matching the component name, or only a default?
+    const hasNamedExport = new RegExp(`export\\s+(function|const|class)\\s+${componentName}\\b`).test(primaryCode);
 
-    const code = `${clientDirective}import React from "react";
+    let code: string;
+
+    if (isCompleteModule) {
+      // v0 returned a full TypeScript module — emit it directly.
+      // Ensure "use client" is at the top if needed and not already present.
+      const alreadyHasDirective = /^['"]use client['"]/.test(primaryCode.trimStart());
+      const directive = isClient && !alreadyHasDirective ? '"use client";\n\n' : "";
+      code = `${directive}${primaryCode}\n`;
+    } else {
+      // v0 returned a partial JSX fragment — wrap it in a component shell.
+      const errorBoundaryImport =
+        ctx.flags.enableErrorBoundaries && !isClient
+          ? `import { Suspense } from "react";\n`
+          : "";
+
+      code = `${clientDirective}import React from "react";
 ${errorBoundaryImport}
 export interface ${componentName}Props {
   className?: string;
@@ -134,7 +187,7 @@ export function ${componentName}({ className }: ${componentName}Props) {
   return (
     <div className={className}>
       {/* v0-generated design — begin */}
-${indentCode(design.code, 6)}
+${indentCode(primaryCode, 6)}
       {/* v0-generated design — end */}
     </div>
   );
@@ -142,6 +195,7 @@ ${indentCode(design.code, 6)}
 
 export default ${componentName};
 `;
+    }
 
     return {
       name: componentName,
@@ -152,11 +206,19 @@ export default ${componentName};
     };
   }
 
-  private buildWrapperComponent(componentName: string, ctx: PipelineContext): GeneratedComponent {
+  private buildWrapperComponent(
+    componentName: string,
+    ctx: PipelineContext,
+    hasNamedExport = true,
+  ): GeneratedComponent {
     const kebabName = toKebabCase(componentName);
+    // Use named import when available, default import when the module only has export default
+    const importLine = hasNamedExport
+      ? `import { ${componentName} } from "./${kebabName}.js";`
+      : `import ${componentName} from "./${kebabName}.js";`;
 
     const code = `import React, { Suspense } from "react";
-import { ${componentName} } from "./${kebabName}.js";
+${importLine}
 
 interface ${componentName}WrapperProps {
   className?: string;

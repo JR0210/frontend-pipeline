@@ -7,12 +7,14 @@ import type {
   FeatureFlags,
 } from "../types/index.js";
 import { V0Client } from "./v0Client.js";
+import { V0ChatFetcher } from "./v0ChatFetcher.js";
 import { DesignStore } from "./designStore.js";
 import { DesignValidator } from "./validator.js";
 import { ComponentTransformer } from "./transformer.js";
 import { SkillsEngine } from "./skillsEngine.js";
 import { TestGenerator } from "./testGenerator.js";
 import { OutputWriter } from "./outputWriter.js";
+import { DependencyAnalyser } from "./dependencyAnalyser.js";
 import { logger } from "../observability/logger.js";
 import { errorTracker } from "../observability/errorTracker.js";
 import { isEnabled } from "../observability/flags.js";
@@ -30,21 +32,25 @@ const OUTPUT_BASE = path.resolve("temp", "dist");
  */
 export class Pipeline {
   private readonly v0Client: V0Client;
+  private readonly v0ChatFetcher: V0ChatFetcher;
   private readonly designStore: DesignStore;
   private readonly validator: DesignValidator;
   private readonly transformer: ComponentTransformer;
   private readonly skillsEngine: SkillsEngine;
   private readonly testGenerator: TestGenerator;
   private readonly outputWriter: OutputWriter;
+  private readonly dependencyAnalyser: DependencyAnalyser;
 
   constructor() {
     this.v0Client = new V0Client();
+    this.v0ChatFetcher = new V0ChatFetcher();
     this.designStore = new DesignStore();
     this.validator = new DesignValidator();
     this.transformer = new ComponentTransformer();
     this.skillsEngine = new SkillsEngine();
     this.testGenerator = new TestGenerator();
     this.outputWriter = new OutputWriter();
+    this.dependencyAnalyser = new DependencyAnalyser();
   }
 
   async run(options: CLIOptions, flags: FeatureFlags): Promise<PipelineOutput> {
@@ -99,6 +105,22 @@ export class Pipeline {
     const hookResult = this.transformer.buildHook(design, ctx);
     const hooks = hookResult ? [hookResult] : [];
 
+    // ── 5b. Analyse external dependencies ───────────────────────────────────
+    const externalDependencies = this.dependencyAnalyser.analyse(components, hooks);
+    if (externalDependencies.length > 0) {
+      const packages = [...new Set(externalDependencies.map((d) => d.package))];
+      logger.warn(`External dependencies detected — install in target project: ${packages.join(", ")}`);
+      // Annotate component code with inline TODO comments
+      for (const component of components) {
+        const fileDeps = externalDependencies.filter((d) => d.sourceFile === component.path.split("/").pop());
+        component.code = this.dependencyAnalyser.annotateCode(component.code, fileDeps);
+      }
+      for (const hook of hooks) {
+        const fileDeps = externalDependencies.filter((d) => d.sourceFile === hook.path.split("/").pop());
+        hook.code = this.dependencyAnalyser.annotateCode(hook.code, fileDeps);
+      }
+    }
+
     // ── 6. Generate tests ────────────────────────────────────────────────────
     const tests =
       isEnabled(flags, "enableTestGeneration") && !options.skipTests
@@ -109,14 +131,22 @@ export class Pipeline {
     if (!options.dryRun) {
       const output = await this.outputWriter.write(components, hooks, tests, ctx);
       logger.info("Pipeline complete", { outputDir: output.outputDir });
-      return output;
+      return { ...output, externalDependencies };
     }
 
     logger.info("Dry-run mode — no files written.");
-    return { featureName, outputDir, components, hooks, tests, indexFile: "" };
+    return { featureName, outputDir, components, hooks, tests, indexFile: "", externalDependencies };
   }
 
   private async acquireDesign(options: CLIOptions, flags: FeatureFlags): Promise<V0Design> {
+    // Fetch from a v0.app chat URL
+    if (options.designUrl) {
+      logger.info("Fetching design from v0 chat URL", { url: options.designUrl });
+      const design = await this.v0ChatFetcher.fetchFromUrl(options.designUrl);
+      await this.designStore.save(design);
+      return design;
+    }
+
     // Load from a pre-existing file if provided
     if (options.designFile) {
       logger.info("Loading design from file", { path: options.designFile });

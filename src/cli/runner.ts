@@ -3,6 +3,7 @@ import ora from "ora";
 import type { CLIOptions, PipelineOutput } from "../types/index.js";
 import { Pipeline } from "../pipeline/index.js";
 import { DesignStore } from "../pipeline/designStore.js";
+import { V0ChatFetcher } from "../pipeline/v0ChatFetcher.js";
 import { initLogger, logger } from "../observability/logger.js";
 import { resolveFlags } from "../observability/flags.js";
 import { errorTracker } from "../observability/errorTracker.js";
@@ -62,6 +63,37 @@ export async function listDesigns(): Promise<void> {
   }
 }
 
+export async function listV0Chats(): Promise<void> {
+  const fetcher = new V0ChatFetcher();
+  let chats;
+  try {
+    chats = await fetcher.listChats();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(chalk.red(`\nError: ${message}`));
+    process.exit(1);
+  }
+
+  if (chats.length === 0) {
+    console.log(chalk.yellow("No v0 chats found for this API key."));
+    return;
+  }
+
+  console.log(chalk.bold(`\nYour v0 chats (${chats.length} total):`));
+  for (const chat of chats) {
+    const title = chat.title ? chalk.white(chat.title) : chalk.gray("(untitled)");
+    const date = chat.updatedAt
+      ? chalk.gray(new Date(chat.updatedAt).toLocaleDateString())
+      : "";
+    console.log(`  ${chalk.cyan("•")} ${title}`);
+    console.log(`    ${chalk.dim("ID:")}  ${chalk.yellow(chat.id)}`);
+    if (chat.url) console.log(`    ${chalk.dim("URL:")} ${chat.url}`);
+    if (date) console.log(`    ${chalk.dim("Updated:")} ${date}`);
+    console.log();
+  }
+  console.log(chalk.dim("Use the ID or URL with: npm run dev -- generate -u <url-or-id>"));
+}
+
 function printSummary(output: PipelineOutput): void {
   console.log(chalk.bold("\nGenerated:"));
   console.log(`  ${chalk.cyan("Output dir:")} ${output.outputDir}`);
@@ -74,6 +106,29 @@ function printSummary(output: PipelineOutput): void {
     for (const c of output.components) {
       const tag = c.isClientComponent ? chalk.yellow("[client]") : chalk.green("[server]");
       console.log(`  ${tag} ${chalk.white(c.name)}`);
+    }
+  }
+
+  const deps = output.externalDependencies ?? [];
+  if (deps.length > 0) {
+    const packages = [...new Set(deps.map((d) => d.package))];
+    const npmPackages = [
+      ...new Set(
+        packages
+          .filter((p) => !p.startsWith("@/"))
+          .map((p) => (p.startsWith("@") ? p.split("/").slice(0, 2).join("/") : p.split("/")[0])),
+      ),
+    ];
+
+    console.log(chalk.bold(chalk.yellow("\n⚠  Peer dependencies required in target project:")));
+    for (const dep of deps) {
+      console.log(
+        `  ${chalk.yellow("•")} ${chalk.white(dep.package)}  ${chalk.dim(`(${dep.symbols.join(", ")})`)}  ${chalk.dim(`← ${dep.sourceFile}`)}`,
+      );
+    }
+
+    if (npmPackages.length > 0) {
+      console.log(chalk.cyan(`\n  npm install ${npmPackages.join(" ")}`));
     }
   }
 }

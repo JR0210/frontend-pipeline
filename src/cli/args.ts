@@ -24,6 +24,7 @@ export function buildProgram(): Command {
     .option("-n, --feature-name <name>", "Name of the feature/component to generate", "my-feature")
     .option("-o, --output-dir <dir>", "Base output directory", "temp/dist")
     .option("-d, --design-file <path>", "Load a saved v0 design from a JSON file instead of calling the API")
+    .option("-u, --design-url <url>", "Fetch the latest code from an existing v0.app chat URL")
     .option("--skip-validation", "Skip the design validation phase", false)
     .option("--skip-tests", "Skip test generation", false)
     .option("--skip-skills", "Skip applying repository skills", false)
@@ -31,7 +32,9 @@ export function buildProgram(): Command {
     .option("-v, --verbose", "Enable verbose / debug logging", false)
     .action(async (opts: Record<string, unknown>) => {
       const { runPipeline } = await import("./runner.js");
-      await runPipeline(mapOptions(opts));
+      const { promptMissingOptions } = await import("./promptUser.js");
+      const options = await promptMissingOptions(mapOptions(opts));
+      await runPipeline(options);
     });
 
   program
@@ -40,6 +43,14 @@ export function buildProgram(): Command {
     .action(async () => {
       const { listDesigns } = await import("./runner.js");
       await listDesigns();
+    });
+
+  program
+    .command("list-chats")
+    .description("List your v0 chats from the API (requires V0_API_KEY)")
+    .action(async () => {
+      const { listV0Chats } = await import("./runner.js");
+      await listV0Chats();
     });
 
   return program;
@@ -51,6 +62,7 @@ function mapOptions(opts: Record<string, unknown>): CLIOptions {
     featureName: opts["featureName"] as string | undefined,
     outputDir: opts["outputDir"] as string | undefined,
     designFile: opts["designFile"] as string | undefined,
+    designUrl: opts["designUrl"] as string | undefined,
     skipValidation: Boolean(opts["skipValidation"]),
     skipTests: Boolean(opts["skipTests"]),
     skipSkills: Boolean(opts["skipSkills"]),
