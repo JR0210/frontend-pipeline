@@ -1,3 +1,10 @@
+---
+name: tailwind
+description: Enforce Tailwind CSS conventions on v0-generated code. Use this skill when the pipeline is transforming or validating v0 output that uses Tailwind — ensuring utility-class composition, responsive prefixes, dark mode support, and conditional class patterns meet project standards.
+---
+
+This skill guides the Tailwind audit pass on v0-generated components. v0 often outputs inconsistent utility class usage, inline styles, or arbitrary CSS — apply these rules during transformation to align output with Tailwind best practices.
+
 # Tailwind CSS
 
 > Use Tailwind utility classes for styling; avoid inline styles and custom CSS.

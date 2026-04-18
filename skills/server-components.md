@@ -1,3 +1,10 @@
+---
+name: server-components
+description: Enforce correct React Server Component boundaries in v0-generated Next.js code. Use this skill when the pipeline is transforming v0 output targeting Next.js App Router — ensuring "use client" directives are placed only at justified leaf boundaries and server components are used by default.
+---
+
+This skill guides the pipeline's server/client boundary audit on v0-generated Next.js components. v0 often adds "use client" indiscriminately or fetches data client-side when server components would be more appropriate — apply these rules to produce output optimized for the App Router.
+
 # Server Components
 
 > Prefer React Server Components by default; only add "use client" when necessary.

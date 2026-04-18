@@ -1,3 +1,10 @@
+---
+name: testing
+description: Generate Vitest + React Testing Library test suites for v0-generated components. Use this skill when the pipeline is producing test files alongside transformed output, ensuring components have rendering, interaction, edge case, and snapshot coverage.
+---
+
+This skill guides the automated generation of test files for components produced by the pipeline. Every component emitted by the pipeline should be accompanied by a test suite — use these patterns to produce correct, idiomatic Vitest + React Testing Library coverage.
+
 # Testing
 
 > Every component must have Vitest + React Testing Library coverage.
