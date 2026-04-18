@@ -34,7 +34,11 @@ export class DesignStore {
 
   /** Load a design from an explicit file path. */
   async loadFromPath(filePath: string): Promise<V0Design> {
-    const raw = await fs.readFile(filePath, "utf-8");
+    const resolved = path.resolve(filePath);
+    if (!resolved.endsWith(".json")) {
+      throw new Error(`Design file must be a .json file: ${filePath}`);
+    }
+    const raw = await fs.readFile(resolved, "utf-8");
     return JSON.parse(raw) as V0Design;
   }
 

@@ -84,7 +84,16 @@ export class V0Client {
               reject(new Error(`v0 API error ${res.statusCode}: ${data}`));
               return;
             }
-            resolve(JSON.parse(data) as V0APIResponse);
+            const parsed = JSON.parse(data) as Record<string, unknown>;
+            if (typeof parsed.id !== "string" || typeof parsed.code !== "string") {
+              reject(
+                new Error(
+                  `Unexpected v0 API response shape — expected { id: string, code: string }, got: ${JSON.stringify(Object.keys(parsed))}`
+                )
+              );
+              return;
+            }
+            resolve(parsed as unknown as V0APIResponse);
           } catch (err) {
             reject(new Error(`Failed to parse v0 response: ${String(err)}`));
           }

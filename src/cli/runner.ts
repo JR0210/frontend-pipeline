@@ -13,9 +13,7 @@ import { errorTracker } from "../observability/errorTracker.js";
  * Manages progress spinners, logging initialisation, and error presentation.
  */
 export async function runPipeline(options: CLIOptions): Promise<void> {
-  const flags = resolveFlags({
-    enableStructuredLogging: process.env["NODE_ENV"] === "production",
-  });
+  const flags = resolveFlags();
 
   initLogger(options.verbose ? "debug" : "info", flags.enableStructuredLogging);
 

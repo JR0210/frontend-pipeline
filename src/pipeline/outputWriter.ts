@@ -20,7 +20,8 @@ export class OutputWriter {
     tests: GeneratedTest[],
     ctx: PipelineContext
   ): Promise<PipelineOutput> {
-    await this.ensureDirectories(ctx.outputDir);
+    const outputDir = path.resolve(ctx.outputDir);
+    await this.ensureDirectories(outputDir);
 
     await Promise.all([
       ...components.map((c) => this.writeFile(c.path, c.code)),
@@ -29,11 +30,11 @@ export class OutputWriter {
     ]);
 
     const indexContent = this.buildIndex(components, hooks, ctx);
-    const indexPath = path.join(ctx.outputDir, "index.ts");
+    const indexPath = path.join(outputDir, "index.ts");
     await this.writeFile(indexPath, indexContent);
 
     logger.info("Output written", {
-      outputDir: ctx.outputDir,
+      outputDir,
       components: components.length,
       hooks: hooks.length,
       tests: tests.length,
@@ -41,7 +42,7 @@ export class OutputWriter {
 
     return {
       featureName: ctx.featureName,
-      outputDir: ctx.outputDir,
+      outputDir,
       components,
       hooks,
       tests,

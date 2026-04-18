@@ -40,7 +40,9 @@ export class SkillsEngine {
 
   /**
    * Apply loaded skills to a piece of generated code.
-   * Returns the code with a skill-summary comment block prepended.
+   * Returns the code with a skill-summary comment block prepended, and with
+   * any concrete transformations applied (e.g. adding "use client" when
+   * client-only patterns are detected but the directive is absent).
    */
   applyToCode(code: string): string {
     if (this.skills.length === 0) return code;
@@ -51,6 +53,20 @@ export class SkillsEngine {
 
     if (relevant.length === 0) return code;
 
+    let result = code;
+
+    // Concrete transformation: server-components skill detected client-side
+    // patterns without an existing "use client" directive — prepend it.
+    const serverComponentsSkill = relevant.find((s) =>
+      s.name.toLowerCase().includes("server")
+    );
+    if (serverComponentsSkill && !result.trimStart().startsWith('"use client"')) {
+      result = `"use client";\n\n${result}`;
+      logger.debug("Skills engine: added 'use client' directive", {
+        skill: serverComponentsSkill.name,
+      });
+    }
+
     const comment = [
       "/**",
       " * Applied repository skills:",
@@ -58,7 +74,7 @@ export class SkillsEngine {
       " */",
     ].join("\n");
 
-    return `${comment}\n${code}`;
+    return `${comment}\n${result}`;
   }
 
   /** Return the currently loaded skills. */

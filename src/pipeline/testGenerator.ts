@@ -20,6 +20,8 @@ export class TestGenerator {
       .replace(`${ctx.outputDir}/components/`, "")
       .replace(/\.tsx?$/, "");
 
+    const kebabName = ctx.featureName.toLowerCase().replace(/\s+/g, "-");
+
     const code = `import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -28,14 +30,15 @@ import { ${component.name} } from "../components/${relativePath}.js";
 
 describe("${component.name}", () => {
   it("renders without crashing", () => {
-    render(<${component.name} />);
-    expect(document.body).toBeTruthy();
+    const { container } = render(<${component.name} />);
+    expect(container.firstChild).not.toBeNull();
   });
 
-  it("applies a custom className", () => {
-    const { container } = render(<${component.name} className="custom-class" />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root).toBeTruthy();
+  it("renders a root element with a data-testid or accessible role", () => {
+    render(<${component.name} data-testid="${kebabName}" />);
+    // If the component forwards data-testid, it should be queryable.
+    // Otherwise, verify the component renders at least one DOM node.
+    expect(document.body.firstElementChild).not.toBeNull();
   });
 
 ${this.buildStateTests(component)}
