@@ -82,6 +82,8 @@ export class ComponentTransformer {
 
     const componentName = toComponentName(ctx.featureName);
     const isClient = needsClientDirective(design.code);
+    const primaryCode = extractPrimaryCode(design.code);
+    const hasNamedExport = new RegExp(`export\\s+(function|const|class)\\s+${componentName}\\b`).test(primaryCode);
 
     const primary = this.buildPrimaryComponent(design, componentName, isClient, ctx);
     const wrapper = this.buildWrapperComponent(componentName, ctx, hasNamedExport);
@@ -155,8 +157,6 @@ export function ${hookName}(): ${componentName}State {
 
     const primaryCode = extractPrimaryCode(design.code);
     const isCompleteModule = /export\s+(default\s+)?(function|const|class|async)/.test(primaryCode);
-    // Does the code expose a named export matching the component name, or only a default?
-    const hasNamedExport = new RegExp(`export\\s+(function|const|class)\\s+${componentName}\\b`).test(primaryCode);
 
     let code: string;
 

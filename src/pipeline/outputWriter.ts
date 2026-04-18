@@ -47,6 +47,7 @@ export class OutputWriter {
       hooks,
       tests,
       indexFile: indexPath,
+      externalDependencies: [],
     };
   }
 
