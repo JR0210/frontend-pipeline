@@ -6,7 +6,6 @@ const DEFAULT_FLAGS: FeatureFlags = {
   enableTestGeneration: true,
   enableErrorBoundaries: true,
   enableStructuredLogging: false,
-  enableObservability: true,
 };
 
 /**

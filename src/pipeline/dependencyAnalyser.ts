@@ -54,13 +54,17 @@ export class DependencyAnalyser {
 
     const unique = [...new Map(deps.map((d) => [d.package, d])).values()];
 
+    const installable = unique
+      .map((d) => normaliseToNpmPackage(d.package))
+      .filter((p) => p !== "(local alias)");
+
     const lines = [
       "/**",
       " * ⚠️  External dependencies required in your target project:",
       ...unique.map((d) => ` *    ${d.package}  →  ${d.symbols.join(", ")}`),
-      " *",
-      " * Install missing packages, e.g.:",
-      ` *    npm install ${unique.map((d) => normaliseToNpmPackage(d.package)).join(" ")}`,
+      ...(installable.length > 0
+        ? [" *", ` *    npm install ${installable.join(" ")}`]
+        : []),
       " */",
     ];
 

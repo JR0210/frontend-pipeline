@@ -12,7 +12,6 @@ export interface FeatureFlags {
   enableTestGeneration: boolean;
   enableErrorBoundaries: boolean;
   enableStructuredLogging: boolean;
-  enableObservability: boolean;
 }
 
 /** CLI options parsed from command-line arguments */
