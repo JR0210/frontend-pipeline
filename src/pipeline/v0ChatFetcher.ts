@@ -115,7 +115,9 @@ export class V0ChatFetcher {
         chatId,
         fileCount: realFiles.length,
       });
-      const code = realFiles.map((f) => `// ${f.name}\n${f.content}`).join("\n\n");
+      const code = realFiles
+        .map((f) => `// ${f.name.startsWith("/") ? f.name : `/${f.name}`}\n${f.content}`)
+        .join("\n\n");
       return {
         id: chatId,
         prompt: chat.title ?? chat.initialMessage ?? "",

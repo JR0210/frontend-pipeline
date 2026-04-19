@@ -40,7 +40,7 @@ export class V0Client {
     logger.info("Sending prompt to Vercel v0…", { promptLength: prompt.length });
 
     const body = JSON.stringify({ prompt, framework: "nextjs" });
-    const response = await this.post("/generate", body);
+    const response = await this.post("generate", body);
 
     const design: V0Design = {
       id: response.id,

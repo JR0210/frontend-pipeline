@@ -81,8 +81,8 @@ export class ComponentTransformer {
     logger.info("Transforming design into components", { featureName: ctx.featureName });
 
     const componentName = toComponentName(ctx.featureName);
-    const isClient = needsClientDirective(design.code);
     const primaryCode = extractPrimaryCode(design.code);
+    const isClient = needsClientDirective(primaryCode);
     const hasNamedExport = new RegExp(`export\\s+(function|const|class)\\s+${componentName}\\b`).test(primaryCode);
 
     const primary = this.buildPrimaryComponent(design, componentName, isClient, ctx);
@@ -168,13 +168,8 @@ export function ${hookName}(): ${componentName}State {
       code = `${directive}${primaryCode}\n`;
     } else {
       // v0 returned a partial JSX fragment — wrap it in a component shell.
-      const errorBoundaryImport =
-        ctx.flags.enableErrorBoundaries && !isClient
-          ? `import { Suspense } from "react";\n`
-          : "";
-
       code = `${clientDirective}import React from "react";
-${errorBoundaryImport}
+
 export interface ${componentName}Props {
   className?: string;
 }

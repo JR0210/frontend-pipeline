@@ -25,6 +25,7 @@
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
     "@types/node": "^22.0.0",

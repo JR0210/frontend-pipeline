@@ -20,13 +20,12 @@ export class TestGenerator {
       .replace(`${ctx.outputDir}/components/`, "")
       .replace(/\.tsx?$/, "");
 
-    const kebabName = ctx.featureName.toLowerCase().replace(/\s+/g, "-");
-
     const code = `import React from "react";
 import { describe, it, expect, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ${component.name} } from "../components/${relativePath}.js";
+import ${component.name} from "../components/${relativePath}.js";
 
 describe("${component.name}", () => {
   it("renders without crashing", () => {
@@ -34,11 +33,8 @@ describe("${component.name}", () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it("renders a root element with a data-testid or accessible role", () => {
-    render(<${component.name} data-testid="${kebabName}" />);
-    // If the component forwards data-testid, it should be queryable.
-    // Otherwise, verify the component renders at least one DOM node.
-    expect(document.body.firstElementChild).not.toBeNull();
+  it("mounts without errors", () => {
+    expect(() => render(<${component.name} />)).not.toThrow();
   });
 
 ${this.buildStateTests(component)}
@@ -98,10 +94,6 @@ ${this.buildEdgeCaseTests(component)}
 
   private buildEdgeCaseTests(component: GeneratedComponent): string {
     return [
-      `  it("renders correctly with no optional props", () => {`,
-      `    expect(() => render(<${component.name} />)).not.toThrow();`,
-      `  });`,
-      ``,
       `  it("renders consistently (snapshot)", () => {`,
       `    const { container } = render(<${component.name} />);`,
       `    expect(container).toMatchSnapshot();`,
