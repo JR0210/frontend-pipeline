@@ -215,12 +215,26 @@ export default ${componentName};
     hasNamedExport = true,
   ): GeneratedComponent {
     const kebabName = toKebabCase(componentName);
-    // Use named import when available, default import when the module only has export default
     const importLine = hasNamedExport
       ? `import { ${componentName} } from "./${kebabName}.js";`
       : `import ${componentName} from "./${kebabName}.js";`;
 
-    const code = `import React, { Suspense } from "react";
+    const code =
+      ctx.framework === "react"
+        ? this.buildReactWrapper(componentName, importLine)
+        : this.buildNextjsWrapper(componentName, importLine);
+
+    return {
+      name: `${componentName}Wrapper`,
+      path: `${ctx.outputDir}/components/${kebabName}-wrapper.tsx`,
+      code,
+      isClientComponent: false,
+      hasTests: false,
+    };
+  }
+
+  private buildNextjsWrapper(componentName: string, importLine: string): string {
+    return `import React, { Suspense } from "react";
 ${importLine}
 
 interface ${componentName}WrapperProps {
@@ -236,18 +250,9 @@ function ${componentName}Skeleton() {
   );
 }
 
-function ${componentName}Error({ error }: { error: Error }) {
-  return (
-    <div role="alert" className="text-red-600 p-4 border border-red-300 rounded">
-      <p className="font-semibold">Something went wrong</p>
-      <p className="text-sm">{error.message}</p>
-    </div>
-  );
-}
-
 /**
- * ${componentName}Wrapper — wraps ${componentName} with Suspense + error handling.
- * Safe to use in SSR/Server Component trees.
+ * ${componentName}Wrapper — Suspense wrapper.
+ * Error handling is delegated to the co-located error.tsx App Router boundary.
  */
 export function ${componentName}Wrapper({ className }: ${componentName}WrapperProps) {
   return (
@@ -257,17 +262,76 @@ export function ${componentName}Wrapper({ className }: ${componentName}WrapperPr
   );
 }
 
-export { ${componentName}Error, ${componentName}Skeleton };
+export { ${componentName}Skeleton };
 export default ${componentName}Wrapper;
 `;
+  }
 
-    return {
-      name: `${componentName}Wrapper`,
-      path: `${ctx.outputDir}/components/${kebabName}-wrapper.tsx`,
-      code,
-      isClientComponent: false,
-      hasTests: false,
-    };
+  private buildReactWrapper(componentName: string, importLine: string): string {
+    return `import React, { Suspense } from "react";
+${importLine}
+
+interface ${componentName}WrapperProps {
+  className?: string;
+}
+
+function ${componentName}Skeleton() {
+  return (
+    <div className="animate-pulse space-y-4" aria-label="Loading ${componentName}">
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-4 bg-gray-200 rounded w-1/2" />
+    </div>
+  );
+}
+
+function ${componentName}ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div role="alert" className="text-red-600 p-4 border border-red-300 rounded">
+      <p className="font-semibold">Something went wrong</p>
+      <p className="text-sm">{error.message}</p>
+    </div>
+  );
+}
+
+class ${componentName}ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(_error: Error, _info: React.ErrorInfo) {}
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return <${componentName}ErrorFallback error={this.state.error} />;
+    }
+    return this.props.children;
+  }
+}
+
+/**
+ * ${componentName}Wrapper — Suspense + class-based ErrorBoundary.
+ */
+export function ${componentName}Wrapper({ className }: ${componentName}WrapperProps) {
+  return (
+    <${componentName}ErrorBoundary>
+      <Suspense fallback={<${componentName}Skeleton />}>
+        <${componentName} className={className} />
+      </Suspense>
+    </${componentName}ErrorBoundary>
+  );
+}
+
+export { ${componentName}ErrorBoundary, ${componentName}Skeleton };
+export default ${componentName}Wrapper;
+`;
   }
 }
 

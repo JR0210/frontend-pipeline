@@ -92,6 +92,22 @@ describe("ComponentTransformer", () => {
       // Should not duplicate the export
       expect(primary.code).not.toContain("export { default as DashboardCard }");
     });
+
+    it("nextjs wrapper is Suspense-only with no ErrorBoundary class", () => {
+      const ctx = makeCtx("hero-card", "", "nextjs");
+      const [, wrapper] = transformer.transform(makeDesign("return <div/>;"), ctx);
+      expect(wrapper.code).toContain("Suspense");
+      expect(wrapper.code).not.toContain("ErrorBoundary");
+      expect(wrapper.code).not.toContain("getDerivedStateFromError");
+    });
+
+    it("react wrapper includes a class-based ErrorBoundary wrapping Suspense", () => {
+      const ctx = makeCtx("hero-card", "", "react");
+      const [, wrapper] = transformer.transform(makeDesign("return <div/>;"), ctx);
+      expect(wrapper.code).toContain("getDerivedStateFromError");
+      expect(wrapper.code).toContain("HeroCardErrorBoundary");
+      expect(wrapper.code).toContain("Suspense");
+    });
   });
 
   describe("buildHook", () => {
