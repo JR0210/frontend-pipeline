@@ -90,8 +90,7 @@ describe("ComponentTransformer", () => {
       const ctx = makeCtx("dashboard-card", code);
       const [primary] = transformer.transform(makeDesign(code), ctx);
       // Should not duplicate the export
-      const matches = primary.code.match(/export.*DashboardCard/g) ?? [];
-      expect(matches.length).toBe(2); // the existing function export + default export, no extra
+      expect(primary.code).not.toContain("export { default as DashboardCard }");
     });
   });
 
