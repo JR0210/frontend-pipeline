@@ -98,6 +98,10 @@ function printSummary(output: PipelineOutput): void {
   console.log(`  ${chalk.cyan("Components:")} ${output.components.length}`);
   console.log(`  ${chalk.cyan("Hooks:")}      ${output.hooks.length}`);
   console.log(`  ${chalk.cyan("Tests:")}      ${output.tests.length}`);
+  if (output.errorBoundaryFile) {
+    console.log(`  ${chalk.cyan("Error boundary:")} ${output.errorBoundaryFile}`);
+    console.log(chalk.dim("  (Place error.tsx at the appropriate Next.js App Router route segment)"));
+  }
 
   if (output.components.length > 0) {
     console.log(chalk.bold("\nComponents:"));
