@@ -21,10 +21,11 @@ export function buildProgram(): Command {
     .command("generate", { isDefault: true })
     .description("Run the full generation pipeline")
     .option("-p, --prompt <text>", "Natural language prompt to send to Vercel v0")
-    .option("-n, --feature-name <name>", "Name of the feature/component to generate", "my-feature")
+    .option("-n, --feature-name <name>", "Name of the feature/component to generate")
     .option("-o, --output-dir <dir>", "Base output directory", "temp/dist")
     .option("-d, --design-file <path>", "Load a saved v0 design from a JSON file instead of calling the API")
     .option("-u, --design-url <url>", "Fetch the latest code from an existing v0.app chat URL")
+    .option("-f, --framework <framework>", "Target framework for generated components", "nextjs")
     .option("--skip-validation", "Skip the design validation phase", false)
     .option("--skip-tests", "Skip test generation", false)
     .option("--skip-skills", "Skip applying repository skills", false)
@@ -63,6 +64,7 @@ function mapOptions(opts: Record<string, unknown>): CLIOptions {
     outputDir: opts["outputDir"] as string | undefined,
     designFile: opts["designFile"] as string | undefined,
     designUrl: opts["designUrl"] as string | undefined,
+    framework: (opts["framework"] as "nextjs" | "react" | undefined) === "react" ? "react" : "nextjs",
     skipValidation: Boolean(opts["skipValidation"]),
     skipTests: Boolean(opts["skipTests"]),
     skipSkills: Boolean(opts["skipSkills"]),
