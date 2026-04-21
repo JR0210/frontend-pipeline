@@ -192,6 +192,14 @@ export default ${componentName};
 `;
     }
 
+    // Guarantee a named export so barrel `export *` always re-exports the component.
+    const hasNamedExportNow = new RegExp(
+      `export\\s+(function|const|class)\\s+${componentName}\\b`
+    ).test(code);
+    if (!hasNamedExportNow && code.includes("export default")) {
+      code = code.trimEnd() + `\nexport { default as ${componentName} };\n`;
+    }
+
     return {
       name: componentName,
       path: `${ctx.outputDir}/components/${kebabName}.tsx`,

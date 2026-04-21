@@ -77,6 +77,22 @@ describe("ComponentTransformer", () => {
       expect(wrapper.code).toContain("Suspense");
       expect(wrapper.code).toContain("HeroSectionSkeleton");
     });
+
+    it("appends named export when v0 emits a default-only module", () => {
+      const code = `export default function DashboardCard() { return <div />; }`;
+      const ctx = makeCtx("dashboard-card", code);
+      const [primary] = transformer.transform(makeDesign(code), ctx);
+      expect(primary.code).toContain("export { default as DashboardCard }");
+    });
+
+    it("does not append named export when one already exists", () => {
+      const code = `export function DashboardCard() { return <div />; }\nexport default DashboardCard;`;
+      const ctx = makeCtx("dashboard-card", code);
+      const [primary] = transformer.transform(makeDesign(code), ctx);
+      // Should not duplicate the export
+      const matches = primary.code.match(/export.*DashboardCard/g) ?? [];
+      expect(matches.length).toBe(2); // the existing function export + default export, no extra
+    });
   });
 
   describe("buildHook", () => {
