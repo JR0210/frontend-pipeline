@@ -25,7 +25,7 @@ export function buildProgram(): Command {
     .option("-o, --output-dir <dir>", "Base output directory", "temp/dist")
     .option("-d, --design-file <path>", "Load a saved v0 design from a JSON file instead of calling the API")
     .option("-u, --design-url <url>", "Fetch the latest code from an existing v0.app chat URL")
-    .option("-f, --framework <framework>", "Target framework for generated components", "nextjs")
+    .option("-f, --framework <nextjs|react>", "Target framework for generated components", "nextjs")
     .option("--skip-validation", "Skip the design validation phase", false)
     .option("--skip-tests", "Skip test generation", false)
     .option("--skip-skills", "Skip applying repository skills", false)
