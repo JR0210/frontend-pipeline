@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import type { CLIOptions } from "../types/index.js";
 
 /**
@@ -25,7 +25,7 @@ export function buildProgram(): Command {
     .option("-o, --output-dir <dir>", "Base output directory", "temp/dist")
     .option("-d, --design-file <path>", "Load a saved v0 design from a JSON file instead of calling the API")
     .option("-u, --design-url <url>", "Fetch the latest code from an existing v0.app chat URL")
-    .option("-f, --framework <nextjs|react>", "Target framework for generated components", "nextjs")
+    .addOption(new Option("-f, --framework <nextjs|react>", "Target framework for generated components").choices(["nextjs", "react"]).default("nextjs"))
     .option("--skip-validation", "Skip the design validation phase", false)
     .option("--skip-tests", "Skip test generation", false)
     .option("--skip-skills", "Skip applying repository skills", false)
@@ -64,7 +64,7 @@ function mapOptions(opts: Record<string, unknown>): CLIOptions {
     outputDir: opts["outputDir"] as string | undefined,
     designFile: opts["designFile"] as string | undefined,
     designUrl: opts["designUrl"] as string | undefined,
-    framework: (opts["framework"] as "nextjs" | "react" | undefined) === "react" ? "react" : "nextjs",
+    framework: (opts["framework"] as "nextjs" | "react" | undefined) ?? "nextjs",
     skipValidation: Boolean(opts["skipValidation"]),
     skipTests: Boolean(opts["skipTests"]),
     skipSkills: Boolean(opts["skipSkills"]),
