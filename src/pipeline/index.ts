@@ -84,7 +84,14 @@ export class Pipeline {
       }
     }
 
-    const ctx: PipelineContext = { featureName, outputDir, design, flags, verbose: options.verbose, framework: options.framework ?? "nextjs" };
+    const ctx: PipelineContext = {
+      featureName,
+      outputDir,
+      design,
+      flags,
+      verbose: options.verbose,
+      framework: options.framework ?? "nextjs",
+    };
 
     // ── 3. Load skills ───────────────────────────────────────────────────────
     if (isEnabled(flags, "enableSkillsEngine") && !options.skipSkills) {

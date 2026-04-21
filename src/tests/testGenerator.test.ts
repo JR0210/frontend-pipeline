@@ -11,7 +11,6 @@ const defaultFlags: FeatureFlags = {
   enableTestGeneration: true,
   enableErrorBoundaries: true,
   enableStructuredLogging: false,
-  enableObservability: true,
 };
 
 function makeComponent(

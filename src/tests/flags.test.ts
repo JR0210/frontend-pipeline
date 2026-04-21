@@ -49,7 +49,6 @@ describe("isEnabled", () => {
     enableTestGeneration: true,
     enableErrorBoundaries: true,
     enableStructuredLogging: false,
-    enableObservability: true,
   };
 
   it("returns true for an enabled flag", () => {
