@@ -84,7 +84,7 @@ export class Pipeline {
       }
     }
 
-    const ctx: PipelineContext = { featureName, outputDir, design, flags, verbose: options.verbose };
+    const ctx: PipelineContext = { featureName, outputDir, design, flags, verbose: options.verbose, framework: options.framework ?? "nextjs" };
 
     // ── 3. Load skills ───────────────────────────────────────────────────────
     if (isEnabled(flags, "enableSkillsEngine") && !options.skipSkills) {
@@ -135,7 +135,7 @@ export class Pipeline {
     }
 
     logger.info("Dry-run mode — no files written.");
-    return { featureName, outputDir, components, hooks, tests, indexFile: "", externalDependencies };
+    return { featureName, outputDir, components, hooks, tests, indexFile: "", externalDependencies, errorBoundaryFile: undefined };
   }
 
   private async acquireDesign(options: CLIOptions, flags: FeatureFlags): Promise<V0Design> {

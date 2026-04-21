@@ -21,6 +21,7 @@ export interface CLIOptions {
   outputDir?: string;
   designFile?: string;
   designUrl?: string;
+  framework?: "nextjs" | "react";
   skipValidation: boolean;
   skipTests: boolean;
   skipSkills: boolean;
@@ -78,6 +79,7 @@ export interface PipelineOutput {
   tests: GeneratedTest[];
   indexFile: string;
   externalDependencies: ExternalDependency[];
+  errorBoundaryFile?: string;
 }
 
 /** A third-party import detected in generated output */
@@ -105,4 +107,5 @@ export interface PipelineContext {
   design: V0Design;
   flags: FeatureFlags;
   verbose: boolean;
+  framework: "nextjs" | "react";
 }

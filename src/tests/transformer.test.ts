@@ -8,20 +8,24 @@ const defaultFlags: FeatureFlags = {
   enableTestGeneration: true,
   enableErrorBoundaries: true,
   enableStructuredLogging: false,
-  enableObservability: true,
 };
 
 function makeDesign(code: string, id = "design-1"): V0Design {
   return { id, prompt: "test", code, framework: "nextjs", createdAt: "" };
 }
 
-function makeCtx(featureName: string, code = ""): PipelineContext {
+function makeCtx(
+  featureName: string,
+  code = "",
+  framework: "nextjs" | "react" = "nextjs"
+): PipelineContext {
   return {
     featureName,
     outputDir: "temp/dist/test-feature",
     design: makeDesign(code),
     flags: defaultFlags,
     verbose: false,
+    framework,
   };
 }
 
