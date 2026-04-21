@@ -9,6 +9,32 @@ import type {
 } from "../types/index.js";
 import { logger } from "../observability/logger.js";
 
+const ERROR_TSX_TEMPLATE = `"use client";
+
+// Place this file at the appropriate Next.js App Router route segment.
+// Example: app/dashboard/error.tsx handles errors for the /dashboard route.
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div role="alert" className="p-4 border border-red-300 rounded text-red-600">
+      <p className="font-semibold">Something went wrong</p>
+      <p className="text-sm">{error.message}</p>
+      <button
+        onClick={reset}
+        className="mt-2 px-3 py-1 text-sm bg-red-100 hover:bg-red-200 rounded"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+`;
+
 /**
  * Writes the pipeline output (components, hooks, tests, index) to disk
  * under the configured `outputDir`.
@@ -33,6 +59,12 @@ export class OutputWriter {
     const indexPath = path.join(outputDir, "index.ts");
     await this.writeFile(indexPath, indexContent);
 
+    let errorBoundaryFile: string | undefined;
+    if (ctx.framework === "nextjs") {
+      errorBoundaryFile = path.join(outputDir, "error.tsx");
+      await this.writeFile(errorBoundaryFile, ERROR_TSX_TEMPLATE);
+    }
+
     logger.info("Output written", {
       outputDir,
       components: components.length,
@@ -48,6 +80,7 @@ export class OutputWriter {
       tests,
       indexFile: indexPath,
       externalDependencies: [],
+      errorBoundaryFile,
     };
   }
 
