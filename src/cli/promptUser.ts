@@ -1,15 +1,35 @@
 import type { CLIOptions } from "../types/index.js";
 
-/**
- * Fills any missing CLIOptions interactively using enquirer prompts.
- * Options already supplied via flags are left untouched.
- */
 export async function promptMissingOptions(options: CLIOptions): Promise<CLIOptions> {
-  // enquirer is a CJS module; named prompt classes live on the default export at runtime
+  const result = { ...options };
+
+  // ── Non-TTY fast path ─────────────────────────────────────────────────────
+  if (!process.stdin.isTTY) {
+    const missing: string[] = [];
+
+    if (!result.featureName) {
+      missing.push("  --feature-name  Name of the feature/component to generate");
+    }
+    if (!result.prompt && !result.designUrl && !result.designFile) {
+      missing.push(
+        "  --prompt        Natural language prompt (or provide --design-url / --design-file)"
+      );
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required options for non-interactive mode:\n${missing.join("\n")}`
+      );
+    }
+
+    result.outputDir ??= "temp/dist";
+    result.framework ??= "nextjs";
+    return result;
+  }
+
+  // ── TTY interactive path ──────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { Input, Select, MultiSelect, Confirm } = (await import("enquirer")).default as any;
-
-  const result = { ...options };
 
   // ── 1. Source: API prompt vs chat URL vs design file ─────────────────────
   if (!result.prompt && !result.designFile && !result.designUrl) {
@@ -54,12 +74,11 @@ export async function promptMissingOptions(options: CLIOptions): Promise<CLIOpti
   }
 
   // ── 3. Feature name ───────────────────────────────────────────────────────
-  const featureDefault = "my-feature";
-  if (!result.featureName || result.featureName === featureDefault) {
+  if (!result.featureName) {
     const nameInput = new Input({
       name: "featureName",
       message: "Feature / component name:",
-      initial: result.featureName ?? featureDefault,
+      initial: "my-feature",
     });
     result.featureName = await nameInput.run();
   }
@@ -74,7 +93,20 @@ export async function promptMissingOptions(options: CLIOptions): Promise<CLIOpti
     result.outputDir = await outInput.run();
   }
 
-  // ── 5. Pipeline options (multiselect, skip if all were explicitly set) ────
+  // ── 5. Framework ──────────────────────────────────────────────────────────
+  if (!result.framework) {
+    const frameworkSelect = new Select({
+      name: "framework",
+      message: "Target framework:",
+      choices: [
+        { name: "nextjs", message: "Next.js (App Router)" },
+        { name: "react", message: "React" },
+      ],
+    });
+    result.framework = await frameworkSelect.run();
+  }
+
+  // ── 6. Pipeline options ───────────────────────────────────────────────────
   const explicitFlags =
     result.skipValidation || result.skipTests || result.skipSkills || result.dryRun;
 
@@ -90,7 +122,6 @@ export async function promptMissingOptions(options: CLIOptions): Promise<CLIOpti
       ],
     });
 
-    // MultiSelect returns [] on enter with nothing selected — that's fine
     let selected: string[] = [];
     try {
       selected = await optionsSelect.run();
@@ -104,7 +135,7 @@ export async function promptMissingOptions(options: CLIOptions): Promise<CLIOpti
     result.skipSkills = result.skipSkills || selected.includes("skipSkills");
   }
 
-  // ── 6. Verbose confirmation ───────────────────────────────────────────────
+  // ── 7. Verbose confirmation ───────────────────────────────────────────────
   if (!result.verbose) {
     const verboseConfirm = new Confirm({
       name: "verbose",
