@@ -19,7 +19,7 @@ export class DesignStore {
   /** Save a design to disk and return the file path. */
   async save(design: V0Design): Promise<string> {
     await fs.mkdir(this.dir, { recursive: true });
-    const filePath = path.join(this.dir, `${design.id}.json`);
+    const filePath = path.join(this.dir, `${this.sanitizeId(design.id)}.json`);
     await fs.writeFile(filePath, JSON.stringify(design, null, 2), "utf-8");
     logger.info("Design saved", { path: filePath });
     return filePath;
@@ -27,7 +27,7 @@ export class DesignStore {
 
   /** Load a design by its ID. */
   async load(id: string): Promise<V0Design> {
-    const filePath = path.join(this.dir, `${id}.json`);
+    const filePath = path.join(this.dir, `${this.sanitizeId(id)}.json`);
     const raw = await fs.readFile(filePath, "utf-8");
     return JSON.parse(raw) as V0Design;
   }
@@ -45,11 +45,18 @@ export class DesignStore {
   /** Return true when a design file for `id` exists on disk. */
   async exists(id: string): Promise<boolean> {
     try {
-      await fs.access(path.join(this.dir, `${id}.json`));
+      await fs.access(path.join(this.dir, `${this.sanitizeId(id)}.json`));
       return true;
     } catch {
       return false;
     }
+  }
+
+  private sanitizeId(id: string): string {
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+      throw new Error(`Invalid design ID — must contain only letters, digits, hyphens, and underscores: "${id}"`);
+    }
+    return id;
   }
 
   /** List all persisted design IDs. */

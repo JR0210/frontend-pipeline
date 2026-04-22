@@ -22,7 +22,8 @@ export class V0Client {
 
   constructor(apiKey?: string, baseUrl?: string) {
     this.apiKey = apiKey ?? process.env["V0_API_KEY"] ?? "";
-    this.baseUrl = baseUrl ?? process.env["V0_API_BASE_URL"] ?? "https://v0.dev/api";
+    const rawBase = baseUrl ?? process.env["V0_API_BASE_URL"] ?? "https://v0.dev/api";
+    this.baseUrl = rawBase.endsWith("/") ? rawBase : rawBase + "/";
   }
 
   /**

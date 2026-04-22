@@ -220,7 +220,7 @@ export default ${componentName};
       : `import ${componentName} from "./${kebabName}.js";`;
 
     const code =
-      ctx.framework === "react"
+      ctx.framework === "react" && ctx.flags.enableErrorBoundaries
         ? this.buildReactWrapper(componentName, importLine)
         : this.buildNextjsWrapper(componentName, importLine);
 
