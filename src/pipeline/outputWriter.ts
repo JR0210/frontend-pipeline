@@ -60,7 +60,7 @@ export class OutputWriter {
     await this.writeFile(indexPath, indexContent);
 
     let errorBoundaryFile: string | undefined;
-    if (ctx.framework === "nextjs") {
+    if (ctx.framework === "nextjs" && ctx.flags.enableErrorBoundaries) {
       errorBoundaryFile = path.join(outputDir, "error.tsx");
       await this.writeFile(errorBoundaryFile, ERROR_TSX_TEMPLATE);
     }

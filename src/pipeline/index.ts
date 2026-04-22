@@ -119,11 +119,11 @@ export class Pipeline {
       logger.warn(`External dependencies detected — install in target project: ${packages.join(", ")}`);
       // Annotate component code with inline TODO comments
       for (const component of components) {
-        const fileDeps = externalDependencies.filter((d) => d.sourceFile === component.path.split("/").pop());
+        const fileDeps = externalDependencies.filter((d) => d.sourceFile === path.basename(component.path));
         component.code = this.dependencyAnalyser.annotateCode(component.code, fileDeps);
       }
       for (const hook of hooks) {
-        const fileDeps = externalDependencies.filter((d) => d.sourceFile === hook.path.split("/").pop());
+        const fileDeps = externalDependencies.filter((d) => d.sourceFile === path.basename(hook.path));
         hook.code = this.dependencyAnalyser.annotateCode(hook.code, fileDeps);
       }
     }

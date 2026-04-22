@@ -51,6 +51,7 @@ describe("TestGenerator", () => {
       },
       flags: defaultFlags,
       verbose: false,
+      framework: "nextjs",
     };
   }
 

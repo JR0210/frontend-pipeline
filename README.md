@@ -69,9 +69,11 @@ node dist/index.js list-designs
 | Option | Default | Description |
 |---|---|---|
 | `-p, --prompt <text>` | — | Natural language prompt to send to Vercel v0 |
-| `-n, --feature-name <name>` | `my-feature` | Feature/component name |
+| `-n, --feature-name <name>` | — | Feature/component name (required) |
 | `-o, --output-dir <dir>` | `temp/dist` | Base output directory |
 | `-d, --design-file <path>` | — | Load a saved v0 design JSON instead of calling the API |
+| `-u, --design-url <url>` | — | Fetch the latest code from an existing v0.app chat URL (requires `V0_API_KEY`) |
+| `-f, --framework <nextjs\|react>` | `nextjs` | Target framework for generated components |
 | `--skip-validation` | `false` | Skip design validation phase |
 | `--skip-tests` | `false` | Skip test generation |
 | `--skip-skills` | `false` | Skip applying repository skills |
@@ -82,17 +84,29 @@ node dist/index.js list-designs
 
 ## Output Structure
 
+**Next.js (default):**
 ```
 temp/dist/<feature-name>/
 ├── components/
-│   ├── <feature-name>.tsx        # Primary component
-│   └── <feature-name>-wrapper.tsx # Suspense + error boundary wrapper
+│   ├── <feature-name>.tsx         # Primary component
+│   └── <feature-name>-wrapper.tsx # Suspense-only wrapper
+├── error.tsx                       # App Router error boundary (place at route segment)
 ├── hooks/
-│   └── <feature-name>.ts         # Custom hook (if design has state)
+│   └── <feature-name>.ts          # Custom hook (if design has state)
 ├── tests/
-│   ├── <feature-name>.test.tsx
-│   └── <feature-name>-wrapper.test.tsx
-└── index.ts                      # Barrel export
+└── index.ts                        # Barrel export
+```
+
+**React (`--framework react`):**
+```
+temp/dist/<feature-name>/
+├── components/
+│   ├── <feature-name>.tsx         # Primary component
+│   └── <feature-name>-wrapper.tsx # Suspense + class ErrorBoundary wrapper
+├── hooks/
+│   └── <feature-name>.ts          # Custom hook (if design has state)
+├── tests/
+└── index.ts                        # Barrel export
 ```
 
 ---
@@ -121,12 +135,11 @@ Built-in skills:
 Override any flag using environment variables:
 
 ```bash
-PIPELINE_FLAG_ENABLE_V0_INTEGRATION=false   # disable live v0 API calls
-PIPELINE_FLAG_ENABLE_SKILLS_ENGINE=false    # disable skills application
-PIPELINE_FLAG_ENABLE_TEST_GENERATION=false  # disable test generation
-PIPELINE_FLAG_ENABLE_ERROR_BOUNDARIES=false # disable error boundary wrapper
-PIPELINE_FLAG_ENABLE_STRUCTURED_LOGGING=true # enable JSON log output
-PIPELINE_FLAG_ENABLE_OBSERVABILITY=false    # disable observability
+PIPELINE_FLAG_ENABLE_V0_INTEGRATION=false    # disable live v0 API calls
+PIPELINE_FLAG_ENABLE_SKILLS_ENGINE=false     # disable skills application
+PIPELINE_FLAG_ENABLE_TEST_GENERATION=false   # disable test generation
+PIPELINE_FLAG_ENABLE_ERROR_BOUNDARIES=false  # disable error boundary / error.tsx generation
+PIPELINE_FLAG_ENABLE_STRUCTURED_LOGGING=true # enable JSON log output (default: false)
 ```
 
 ---
